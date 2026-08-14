@@ -1,0 +1,11 @@
+/**
+ * PLACE YOUR ORIGINAL ontology-data.js HERE.
+ *
+ * The file should define (or assign to) window.vowlData, e.g.:
+ *
+ *   window.vowlData = { header: {...}, class: [...], classAttribute: [...], ... };
+ *
+ * Rename this file to ontology-data.js after copying the real content.
+ */
+console.warn('ontology-data.js is missing – place the real file in public/');
+window.vowlData = window.vowlData || { class: [], classAttribute: [], property: [], propertyAttribute: [] };

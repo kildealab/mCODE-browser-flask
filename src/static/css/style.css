@@ -1,0 +1,241 @@
+body { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    margin: 0; 
+    display: flex; 
+    flex-direction: column; /* Stack navbar on top, views below */
+    background: #fff; 
+    font-family: Arial, sans-serif; 
+}
+.jstree-node.filtered-match-parent > .jstree-icon { display: inline-block !important; }
+#protege-tree .jstree-container-ul { display: block !important; }
+/* Global Top Header & Navigation Bar styling */
+
+/* Global Top Header & Navigation Bar styling */
+.global-navbar {
+    display: flex;
+    align-items: center;
+    background-color: #104e8b;
+    padding: 0 20px;
+    height: 50px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    z-index: 100;
+}
+.app-title {
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-right: 40px;
+}
+.global-tabs {
+    display: flex;
+    height: 100%;
+    align-items: flex-end;
+}
+.global-tab-btn {
+    background: transparent;
+    border: none;
+    color: #b5c7de;
+    padding: 10px 20px;
+    font-size: 0.95em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    height: calc(100% - 10px);
+}
+.global-tab-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+}
+.global-tab-btn.active {
+    color: white;
+    border-bottom: 3px solid #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* This applies to the container holding your Introduction and Authors text */
+.home-body-content, .text-content {
+    max-width: 800px;   /* Limits the width so it doesn't stretch to the edges */
+    margin: 0 auto;     /* 'auto' automatically balances left/right margins to center it */
+    padding: 0 20px;    /* Adds a little breathing room on mobile screens */
+    text-align: left;   /* Keeps the text readable */
+}
+
+
+/* This is the container that holds your title, version, and text */
+.home-centered-container {
+    max-width: 800px;   /* Limits the width so it doesn't hit the screen edges */
+    width: 90%;         /* Ensures it doesn't touch the edges on smaller screens */
+    margin: 0 auto;     /* Ensures the container stays in the middle */
+    text-align: center; /* This centers the title and version line */
+}
+/* Center the Title and Metadata */
+.home-centered-content h3, 
+.home-centered-content p:first-of-type {
+    text-align: center;
+}
+
+/* Re-center the title and meta if they were forced left */
+.home-centered-container h1,
+.home-centered-container p:first-of-type {
+    text-align: center;
+}
+
+		/* Style for images placed within the main content area */
+.content-image {
+    display: block;
+    margin: 20px auto;   /* Centers the image with spacing above and below */
+    max-width: 90%;      /* Ensures it doesn't overflow the centered container */
+    border: 1px solid #ccc; /* Optional: adds a subtle border to the image */
+    border-radius: 4px;  /* Optional: rounds the corners slightly */
+}
+
+/* 2. Specific styles for Home Page only */
+#page-home.active {
+    display: flex;
+	overflow-y: auto;
+    flex-direction: column;
+    align-items: center; /* This ONLY centers the home page content */
+    padding: 40px;
+}
+
+.page-title {
+    font-size: 3.5rem;    /* Increased from 2.5rem to make it significantly larger */
+    font-weight: 700;     /* Bold weight ensures it remains readable at this size */
+    text-align: center;
+    margin: 0 0 20px 0;
+    color: #333;
+}
+		
+		/* Larger headings */
+.section-title {
+    font-size: 1.8rem; /* Increased size */
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+ 
+/* Smaller subsection heading */
+.sub-section-title {
+    font-size: 1.1rem; /* Smaller size */
+    font-weight: 600;
+    color: #555;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+		.funding-section {
+    display: flex;
+    flex-direction: column; /* Stacks the rows vertically */
+    align-items: center;    /* Centers rows horizontally */
+    gap: 20px;              /* Space between the top and bottom rows */
+    margin-top: 40px;
+}
+
+.logo-row {
+    display: flex;
+    justify-content: center; /* Centers logos within the row */
+    align-items: center;
+    gap: 30px;               /* Space between logos in the same row */
+    flex-wrap: wrap;         /* Ensures responsiveness on smaller screens */
+}
+
+.logo-row img {
+    height: 60px;            /* Uniform height */
+    width: auto;
+    object-fit: contain;
+}
+/* Page Level Switcher Framework */
+.page-content {
+    display: none; /* Hidden by default */
+    flex: 1;
+    width: 100vw;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+.page-content.active {
+    display: flex; /* Display active workspace layout */
+}
+
+/* Maintain inner components relative to the remaining space */
+#protege-sidebar { 
+    width: 380px; 
+    border-right: 2px solid #b5c7de; 
+    padding: 15px; 
+    background: #f4f7fa; 
+    display: flex; 
+    flex-direction: column; 
+    box-sizing: border-box; 
+    height: 100%;
+}
+#protege-inspector { 
+    flex: 1; 
+    padding: 20px 30px; 
+    overflow-y: auto; 
+    background-color: #fff; 
+    box-sizing: border-box; 
+    height: 100%;
+}
+
+/* Fullscreen Visualization View Padding */
+.full-viz-container {
+    flex: 1;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    background: #f8fafc;
+    height: 100%;
+}
+        body { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; margin: 0; display: flex; background: #fff; font-family: Arial, sans-serif; }
+        
+        /* Left Sidebar Layout styling */
+        #protege-sidebar { width: 380px; border-right: 2px solid #b5c7de; padding: 15px; background: #f4f7fa; display: flex; flex-direction: column; box-sizing: border-box; }
+        #protege-sidebar h3 { margin-top: 0; color: #104e8b; font-size: 1.1em; border-bottom: 2px solid #104e8b; padding-bottom: 5px; margin-bottom: 10px; }
+        #protege-search { width: 100%; padding: 6px; border: 1px solid #999; border-radius: 3px; box-sizing: border-box; margin-bottom: 10px; font-size: 0.9em; }
+        #protege-tree { flex: 1; overflow-y: auto; background: #fff; border: 1px solid #b5c7de; padding: 5px; margin-bottom: 15px; }
+
+        /* Export Feedback Button */
+        .export-btn { background-color: #104e8b; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        .export-btn:hover { background-color: #003366; }
+
+        /* Right Inspector Panel display styling */
+        #protege-inspector { flex: 1; padding: 20px 30px; overflow-y: auto; background-color: #fff; box-sizing: border-box; }
+        .class-title { font-size: 2em; font-weight: bold; margin-bottom: 15px; color: #000; font-family: 'Arial', Arial, serif; }
+        
+        /* Collapsible Cards Layout */
+        .yellow-card { background-color: #fbf3db; border: 1px solid #dcd1b4; margin-bottom: 15px; border-radius: 2px; overflow: hidden; }
+        .card-header { padding: 10px 15px; background-color: rgba(0,0,0,0.03); border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: justify; align-items: center; cursor: pointer; user-select: none; }
+        .card-header:hover { background-color: rgba(0,0,0,0.07); }
+        .card-label { font-weight: bold; color: #000; font-size: 0.95em; }
+        .toggle-icon { font-size: 0.8em; color: #666; font-weight: bold; margin-left: auto; }
+        .card-body { padding: 12px 15px; font-size: 0.95em; color: #222; }
+        
+        .value-link { color: #0056b3; font-weight: bold; text-decoration: none; display: inline-block; margin: 2px 0; }
+        .value-link:hover { text-decoration: underline; color: #003366; }
+        
+        /* Slot Properties Table styling */
+        .slot-section-title { color: #104e8b; font-weight: bold; font-size: 1.05em; margin: 25px 0 5px 0; display: flex; align-items: center; cursor: pointer; user-select: none; }
+        .slot-section-title:hover { color: #003366; }
+        .slot-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; background: #fff; }
+        .slot-table th { background-color: #b9d3ee; color: #000; border: 1px solid #9fb6cd; text-align: left; padding: 5px 8px; font-size: 0.9em; font-weight: normal; }
+        .slot-table td { border: 1px solid #b5c7de; padding: 6px 10px; font-size: 0.9em; vertical-align: top; }
+        .slot-table tr:nth-child(even) { background-color: #f9fafc; }
+        .slot-icon { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: middle; }
+        .prop-tag { font-size: 0.8em; font-style: italic; margin-left: 5px; }
+
+        /* Interactive Feedback Widget Styles */
+        .feedback-box { background: #f0f4f8; border: 1px solid #b5c7de; padding: 15px; border-radius: 4px; margin-top: 25px; }
+        .feedback-box h4 { margin-top: 0; color: #104e8b; font-size: 1.1em; margin-bottom: 10px; }
+        .feedback-input { width: 100%; min-height: 70px; box-sizing: border-box; padding: 8px; border: 1px solid #999; border-radius: 3px; font-family: sans-serif; font-size: 0.95em; resize: vertical; margin-bottom: 8px; }
+        .feedback-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .feedback-select { padding: 5px; border-radius: 3px; border: 1px solid #999; font-size: 0.9em; }
+        .submit-feedback-btn { background-color: #28a745; color: white; border: none; padding: 6px 12px; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .submit-feedback-btn:hover { background-color: #218838; }
+        .comment-item { background: white; border-left: 4px solid #104e8b; padding: 8px 12px; margin-top: 8px; border-radius: 0 3px 3px 0; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .tag-correction { border-left-color: #dc3545; }
+        .tag-missing { border-left-color: #ffc107; }
+        .tag-approved { border-left-color: #28a745; }

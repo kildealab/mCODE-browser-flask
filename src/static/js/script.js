@@ -1,0 +1,742 @@
+
+	function populateHomeMetadata() {
+    // Check if vowlData exists
+    if (typeof vowlData !== 'undefined' && vowlData.header) {
+        const header = vowlData.header;
+        const other = header.other;
+
+        // Populate Version
+        $('#meta-version').text(header.version);
+
+        // Populate Comment
+        if (header.comments && header.comments.en) {
+            $('#meta-comment').text(header.comments.en);
+        }
+
+        // Extract metadata from the 'other' object
+        if (other) {
+            // Populate Year/Date
+            const dateEntry = other.creation_date ? other.creation_date[0].value : "N/A";
+            $('#meta-year').text(dateEntry);
+
+            // Populate Authors
+            const authorEntry = other.created_by ? other.created_by[0].value : "N/A";
+            $('#meta-authors').text(authorEntry);
+        }
+    }
+}
+$(document).ready(function() {
+    // Supabase credentials are no longer exposed in the browser.
+    // Feedback is handled by the Express backend at /api/feedback
+
+    // 1. GLOBAL STATE REGISTRY VARIABLES
+    window.globalNodeRegistry = {};
+    window.masterIdLabelMap = {}; 
+    let feedbackDatabase = {}; 
+    syncFeedbackFromDatabase();
+    populateHomeMetadata();
+    // 2. PAGE-LEVEL TAB SELECTION ARCHITECTURE
+    $('.global-tab-btn').on('click', function() {
+    const targetPage = $(this).data('target');
+    
+    // 1. Update Buttons
+    $('.global-tab-btn').removeClass('active');
+    $(this).addClass('active');
+    
+    // 2. Update Panels (this hides all, then shows the target)
+    $('.page-content').removeClass('active');
+    $('#' + targetPage).addClass('active');
+
+    // 3. Optional: Trigger viz if needed
+    if (targetPage === 'page-visualization' && typeof window.initializeEdamGraphicView === 'function') {
+        window.initializeEdamGraphicView();
+    }
+});
+
+    // 3. SAFE SEARCH TRIGGER (Fires only on Enter Key)
+    // 3. AUTOMATIC SEARCH & AUTO-RESET FILTER LISTENER
+    let searchDebounceTimeout = null;
+    $('#protege-search').off('keyup input keydown').on('input', function () {
+        let inputVal = $(this).val(); 
+        
+        clearTimeout(searchDebounceTimeout);
+        
+        // INSTANT RESET: If the user erases everything, reset the tree immediately
+        if (!inputVal.trim()) {
+            const tree = $('#protege-tree').jstree(true);
+            if (tree) {
+                tree.clear_search();
+                tree.close_all();
+            }
+            return;
+        }
+
+        // DEBOUNCE TIMER: Waits 250ms after you stop typing to filter smoothly
+        searchDebounceTimeout = setTimeout(() => {
+            executeFastSearch(inputVal);
+        }, 250); 
+    });
+
+    // 4. ACCORDION / TABLE SLIDERS
+    $(document).on('click', '.card-header', function() {
+        const body = $(this).next('.card-body');
+        const icon = $(this).find('.toggle-icon');
+        body.slideToggle(100, function() {
+            icon.text(body.is(':visible') ? '[ Hide − ]' : '[ Show + ]');
+        });
+    });
+
+    $(document).on('click', '.slot-section-title', function() {
+        const table = $(this).next('.slot-table');
+        const icon = $(this).find('.toggle-icon');
+        table.slideToggle(100, function() {
+            icon.text(table.is(':visible') ? '[ Hide − ]' : '[ Show + ]');
+        });
+    });
+	
+    // 5. FEEDBACK SUBMISSION ENGINE (now via Express backend)
+    $(document).on('click', '.submit-feedback-btn', async function() {
+        const classId = $(this).data('class-id');
+        const className = $(this).data('class-name');
+        const commentText = $('#feedback-text-' + classId).val().trim();
+        const labelType = $('#feedback-tag-' + classId).val();
+
+        if (!commentText) return alert("Please type out a comment before saving.");
+
+        try {
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' ,
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                body: JSON.stringify({
+                    node_id: classId,
+                    class_name: className,
+                    comment: commentText,
+                    tag: labelType
+                })
+            });
+
+            if (!response.ok) {
+                const errBody = await response.json().catch(() => ({}));
+                throw new Error(errBody.error || `HTTP ${response.status}`);
+            }
+
+            const savedNote = await response.json();
+
+            // Update local UI only after successful save
+            if (!feedbackDatabase[classId]) {
+                feedbackDatabase[classId] = { classId: classId, className: className, notes: [] };
+            }
+
+            feedbackDatabase[classId].notes.push({
+                timestamp: savedNote.timestamp || new Date().toISOString().replace('T', ' ').substring(0, 19),
+                tag: savedNote.tag || labelType,
+                text: savedNote.text || commentText
+            });
+
+            $('#feedback-text-' + classId).val('');
+            renderActiveCommentsList(classId);
+
+        } catch (err) {
+            console.error("Feedback save error:", err);
+            alert("Failed to save feedback: " + err.message);
+        }
+    });
+
+    function renderActiveCommentsList(classId) {
+        let container = $('#saved-comments-' + classId);
+        container.empty();
+        
+        if (feedbackDatabase[classId] && feedbackDatabase[classId].notes.length > 0) {
+            let fragment = document.createDocumentFragment();
+            feedbackDatabase[classId].notes.forEach(note => {
+                let tagClass = "tag-general";
+                if (note.tag === "Correction Required") tagClass = "tag-correction";
+                if (note.tag === "Missing Child/Property") tagClass = "tag-missing";
+                if (note.tag === "Approved") tagClass = "tag-approved";
+
+                let item = document.createElement('div');
+                item.className = `comment-item ${tagClass}`;
+                item.innerHTML = `
+                    <div style="font-size:0.8em; color:#666; margin-bottom:3px;">
+                        <strong>[${note.tag}]</strong> — <span>${note.timestamp}</span>
+                    </div>
+                    <div style="color:#111; line-height:1.35em;">${note.text}</div>
+                `;
+                fragment.appendChild(item);
+            });
+            container.append(fragment);
+        }
+    }
+
+    $('#exportFeedbackBtn').on('click', async function() {
+        // if (Object.keys(feedbackDatabase).length === 0) {
+        //     return alert("No comments or reviews have been compiled yet.");
+        // }
+        console.log('exportFeedbackBtn')
+        try {
+            const response = await fetch('/api/feedback');
+            if (!response.ok) {
+                // Backend may be unavailable (e.g. missing Supabase credentials) – fail gracefully
+                console.warn('Feedback sync returned', response.status);
+                return;
+            }
+            const data = await response.json();
+            // Backend already returns the shape { [node_id]: { classId, className, notes: [...] } }
+            Object.assign(feedbackDatabase, data);
+        } catch (err) {
+            console.error("Feedback sync skipped or failed:", err);
+            // Do not block tree rendering
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(feedbackDatabase, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "ontology_review_feedback.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    });
+
+    // 6. DATA PROCESSOR PIPELINE
+    window.processOntologyData = function(vowlData) {
+        let rawClasses = vowlData.class || [];
+        let attributesList = vowlData.classAttribute || [];
+        let propertiesList = vowlData.property || [];
+        let propertyAttributes = vowlData.propertyAttribute || [];
+
+        let attrMap = {};
+        attributesList.forEach(a => { attrMap[a.id] = a; });
+        
+        let propAttrMap = {};
+        propertyAttributes.forEach(pa => { propAttrMap[pa.id] = pa; });
+
+        // Helper to extract a clean string out of WebVOWL structures
+        function extractCleanString(val) {
+            if (!val || val === 'None') return '';
+            if (typeof val === 'string') return val.trim();
+            if (Array.isArray(val) && val.length > 0) return extractCleanString(val[0]);
+            if (typeof val === 'object') {
+                return val.value || val.en || val['en-us'] || val.undefined || Object.values(val).find(v => typeof v === 'string') || '';
+            }
+            return '';
+        }
+
+        rawClasses.forEach(classObj => {
+            const uniqueId = classObj.id;
+            const attr = attributesList.find(a => a.id === uniqueId) || {};
+            
+            if (classObj.type === "rdfs:Literal" || attr.type === "rdfs:Literal") return;
+
+            let rdfsLabel = extractAnnotation(attr.label) || 'None';
+            let prefLabel = '';
+            let altLabel = '';
+            
+            // 1. Initialize definition strictly empty so fallbacks can execute cleanly
+            let skosDef = '';
+
+            // 2. CHECK TOP-LEVEL FIELDS (Where rdfs:comment / rdfs:description live)
+            if (attr.description) skosDef = extractAnnotation(attr.description);
+
+            // 3. CHECK NESTED ANNOTATIONS OBJECTS (Where your custom SKOS definition lives)
+            if (attr.annotations) {
+                for (let key in attr.annotations) {
+                    let cleanKey = key.toLowerCase();
+                    let extractedVal = extractAnnotation(attr.annotations[key]);
+
+		    // console.log(`[Annotation ID: ${uniqueId}] Key: "${key}" -> Extracted Value:`, extractedVal);
+
+                    if (!extractedVal || extractedVal === 'None') continue;
+
+                    // Capture custom SKOS / IAO labels and synonyms
+                    if (cleanKey.includes('preflabel')) {
+                        prefLabel = extractedVal;
+                    }
+                    if (cleanKey.includes('altlabel') || cleanKey.includes('synonym')) {
+                        altLabel = extractedVal;
+                    }
+                    
+                    // Capture definitions by looking for both the label and the absolute URI fragment
+                    if (cleanKey.includes('definition') || cleanKey.includes('iao_0000115')) {
+                        
+                        skosDef = extractedVal; 
+                    }
+                }
+            }
+
+            // Final text fallback for UI display hierarchy
+            let displayName = prefLabel || (rdfsLabel !== 'None' ? rdfsLabel : null) || window.masterIdLabelMap[uniqueId] || cleanUrlFallback(uniqueId);
+            
+            if (typeof isPrimitiveType === "function" && isPrimitiveType(uniqueId, displayName, (classObj.type || '') + " " + (attr.type || ''))) {
+                return; 
+            }
+
+            let equivalents = attr.equivalent || [];
+            if (!Array.isArray(equivalents)) equivalents = [equivalents];
+
+            window.globalNodeRegistry[uniqueId] = {
+                id: uniqueId, 
+                text: classObj.type === "owl:equivalentClass" ? "≡ " + displayName : displayName, 
+                meta: { 
+                    type: classObj.type || 'Class', 
+                    iri: classObj.iri || attr.iri || uniqueId, 
+                    rdfsLabel: rdfsLabel, 
+                    prefLabel: prefLabel || 'None', 
+                    altLabel: altLabel || 'None', 
+                    rdfsComment: extractAnnotation(attr.comment) || 'None', 
+                    comment: skosDef || 'No explicit description found.', // Passes the parsed SKOS definition directly down to the panel
+                    superclasses: [], 
+                    subclasses: [], 
+                    slots: [], 
+                    equivalent: equivalents
+                }
+            };
+        });
+
+        // Two-Way (Bidirectional) Equivalence Bridge Injection
+        Object.keys(window.globalNodeRegistry).forEach(classId => {
+            let node = window.globalNodeRegistry[classId];
+            if (node.meta && node.meta.equivalent) {
+                node.meta.equivalent.forEach(eqId => {
+                    if (window.globalNodeRegistry[eqId]) {
+                        if (!window.globalNodeRegistry[eqId].meta.equivalent.includes(classId)) {
+                            window.globalNodeRegistry[eqId].meta.equivalent.push(classId);
+                        }
+                    }
+                });
+            }
+        });
+
+        rawClasses.forEach(classObj => {
+            const uniqueId = classObj.id;
+            const attr = attrMap[uniqueId] || {};
+            const childNode = window.globalNodeRegistry[uniqueId];
+            if (!childNode) return;
+
+            let superClasses = attr.superClasses || [];
+            if (!Array.isArray(superClasses)) superClasses = [superClasses];
+
+            superClasses.forEach(supId => {
+                if (window.globalNodeRegistry[supId]) {
+                    if (!childNode.meta.superclasses.includes(supId)) childNode.meta.superclasses.push(supId);
+                    if (!window.globalNodeRegistry[supId].meta.subclasses.includes(uniqueId)) window.globalNodeRegistry[supId].meta.subclasses.push(uniqueId);
+                }
+            });
+        });
+
+        propertiesList.forEach(prop => {
+            const propId = prop.id;
+            const attr = propAttrMap[propId] || {};
+            let name = window.masterIdLabelMap[propId] || cleanUrlFallback(propId);
+            let rangeId = attr.range;
+            let safeType = prop.type ? prop.type.toLowerCase() : "";
+            let domains = attr.domain;
+
+            if (domains) {
+                if (!Array.isArray(domains)) domains = [domains];
+                domains.forEach(domainId => {
+                    if (domainId && window.globalNodeRegistry[domainId]) {
+                        let targetRangeName = window.masterIdLabelMap[rangeId] || (window.globalNodeRegistry[rangeId] ? window.globalNodeRegistry[rangeId].text : cleanUrlFallback(rangeId || 'Literal Value'));
+                        let rangeLower = String(targetRangeName).toLowerCase();
+                        
+                        if (rangeLower === 'literal' || rangeLower.includes('string')) {
+                            targetRangeName = 'Literal (Text/Value)';
+                        } else if (rangeLower === 'datetime' || rangeLower.includes('date')) {
+                            targetRangeName = 'dateTime (Timestamp)';
+                        }
+
+                        window.globalNodeRegistry[domainId].meta.slots.push({ 
+                            name: name, 
+                            type: safeType.includes("objectproperty") ? 'Object Property' : 'Data Property', 
+                            range: targetRangeName, 
+                            comment: extractCleanString(getAnyDescription(prop, attr))
+                        });
+                    }
+                });
+            }
+        });
+
+        let jsTreeData = [];
+        let processedTreePaths = new Set();
+
+        function addNodeToTree(classId, treeParentId, currentPathList) {
+            let node = window.globalNodeRegistry[classId];
+            if (!node || currentPathList.includes(classId)) return;
+            
+            let updatedPathList = [...currentPathList, classId];
+            let pathKeyString = updatedPathList.join('->');
+            if (processedTreePaths.has(pathKeyString)) return;
+            processedTreePaths.add(pathKeyString); 
+
+            let treeNodeId = treeParentId === '#' ? classId : treeParentId + "::" + classId;
+            jsTreeData.push({ id: treeNodeId, parent: treeParentId, text: node.text, data: { originalId: classId } });
+            
+            let crossSubclasses = node.meta.subclasses || []; 
+            crossSubclasses.forEach(subId => addNodeToTree(subId, treeNodeId, updatedPathList));
+        }
+
+        // Target window scope registry precisely to catch missing isolated components
+        Object.keys(window.globalNodeRegistry).forEach(classId => {
+            const node = window.globalNodeRegistry[classId];
+            if (!node.meta.superclasses || node.meta.superclasses.length === 0) {
+                addNodeToTree(classId, '#', []);
+            }
+        });
+
+        renderTreeInterface(jsTreeData);
+    };
+
+    function renderTreeInterface(jsTreeData) {
+        $('#protege-tree').jstree("destroy").jstree({
+            'core': { 
+                'data': jsTreeData, 
+                'themes': { 'variant': 'small', 'icons': true, 'dots': true }
+            },
+            'search': {
+                'show_only_matches': true,
+                'show_only_matches_children': false
+            },
+            'plugins': ["wholerow", "search"]
+        });
+    }
+
+    // 7. DATA WRAPPER HELPER UTILITIES
+    function isPrimitiveType(id, label, type) {
+        let idLower = String(id || '').toLowerCase();
+        let labelLower = String(label || '').toLowerCase();
+        let typeLower = String(type || '').toLowerCase();
+        if (typeLower.includes('datatype') || typeLower.includes('literal')) return true;
+        if (idLower.includes('xsd:') || idLower.startsWith('rdfs:literal')) return true;
+        return /\bliteral\b|\bdatetime\b|\bstring\b|\bstrin\b|\btimestamp\b|text\/value|\bboolean\b|\binteger\b|\bint\b/.test(idLower + " " + labelLower);
+    }
+
+    function safeUnwrap(field) {
+        if (!field) return '';
+        if (Array.isArray(field)) { if (field.length === 0) return ''; field = field[0]; }
+        if (typeof field === 'object') { return field.value || field.en || field['en-us'] || field['undefined'] || Object.values(field)[0] || ''; }
+        return String(field);
+    }
+
+    function cleanUrlFallback(str) {
+        if (!str || typeof str !== 'string') return '';
+        if (str.includes('http')) { return str.split('#').pop().split('/').pop().replace(/_/g, ' '); }
+        return str;
+    }
+
+    function getAnyLabel(coreObj, attrObj, fallbackId) {
+        const targets = [coreObj, attrObj].filter(Boolean);
+        for (let i = 0; i < targets.length; i++) {
+            let obj = targets[i];
+            for (let key in obj) {
+                let k = key.toLowerCase();
+                if (k === 'label' || k.endsWith('#label') || k.endsWith(':label') || k.endsWith('preflabel')) {
+                    let val = safeUnwrap(obj[key]);
+                    if (val) return val;
+                }
+            }
+        }
+        return cleanUrlFallback(fallbackId);
+    }
+
+	
+    function getAnyDescription(coreObj, attrObj) {
+        const targets = [coreObj, attrObj].filter(Boolean);
+        for (let i = 0; i < targets.length; i++) {
+            let obj = targets[i];
+            for (let key in obj) {
+                let k = key.toLowerCase();
+                if (k.includes('definition') || k.includes('description') || k.includes('iao_0000115') || k.includes('comment')) {
+                    let val = safeUnwrap(obj[key]);
+                    if (val) return val;
+                }
+            }
+        }
+        return 'No explicit description found.';
+    }
+
+    function getAllSubclasses(classId) {
+        let node = window.globalNodeRegistry[classId];
+        if (!node) return [];
+        let subs = new Set(node.meta.subclasses || []);
+        if (node.meta.equivalent) {
+            node.meta.equivalent.forEach(eqId => {
+                let eqNode = window.globalNodeRegistry[eqId];
+                if (eqNode && eqNode.meta.subclasses) { eqNode.meta.subclasses.forEach(subId => subs.add(subId)); }
+            });
+        }
+        return Array.from(subs);
+    }
+
+    function getAllSuperclasses(classId) {
+        let node = window.globalNodeRegistry[classId];
+        if (!node) return [];
+        let supers = new Set(node.meta.superclasses || []);
+        if (node.meta.equivalent) {
+            node.meta.equivalent.forEach(eqId => {
+                let eqNode = window.globalNodeRegistry[eqId];
+                if (eqNode && eqNode.meta.superclasses) { eqNode.meta.superclasses.forEach(supId => supers.add(supId)); }
+            });
+        }
+        return Array.from(supers);
+    }
+
+function extractAnnotation(val) {
+            if (!val || val === 'None') return '';
+            if (typeof val === 'string') return val.trim();
+            if (Array.isArray(val) && val.length > 0) return extractAnnotation(val[0]);
+            if (typeof val === 'object') {
+                return val.value || val.en || val['en-us'] || val.undefined || Object.values(val)[0] || '';
+            }
+            return String(val);
+        }
+async function syncFeedbackFromDatabase() {
+    try {
+        const response = await fetch('/api/feedback');
+        if (!response.ok) {
+            // Backend may be unavailable (e.g. missing Supabase credentials) – fail gracefully
+            console.warn('Feedback sync returned', response.status);
+            return;
+        }
+        const data = await response.json();
+        // Backend already returns the shape { [node_id]: { classId, className, notes: [...] } }
+        Object.assign(feedbackDatabase, data);
+        console.log("Feedback synchronized from backend.");
+    } catch (err) {
+        console.error("Feedback sync skipped or failed:", err);
+        // Do not block tree rendering
+    }
+}
+    // 8. JSTREE TREE EVENT LISTENER FOR CONCEPT INSPECTION
+    $('#protege-tree').on("changed.jstree", function (e, data) {
+        if(!data.selected.length) return;
+        
+        let treeNode = data.instance.get_node(data.selected[0]);
+        let originalId = (treeNode.data && treeNode.data.originalId) ? treeNode.data.originalId : treeNode.id;
+        const node = window.globalNodeRegistry[originalId];
+        if (!node) return;
+        
+        const m = node.meta;
+        let subsTree = buildSubclassTreeHtml(node.id);
+        if (!subsTree || subsTree.trim() === '') {
+            subsTree = '<div style="color:#666; font-style:italic;">None (This is a leaf level terminal entity)</div>';
+        }
+
+        let equivalentsBlockHtml = 'None';
+        if (m.equivalent && m.equivalent.length > 0) {
+            let itemsList = [];
+            m.equivalent.forEach(eqId => {
+                let lblName = window.masterIdLabelMap[eqId] || cleanUrlFallback(eqId);
+                if (isPrimitiveType(eqId, lblName, '')) return;
+
+                let eqNode = window.globalNodeRegistry[eqId];
+                let cardElement = `<div style="margin-bottom: 10px; border-bottom: 1px dashed #d6cbe3; padding-bottom: 8px;">
+                    <span class="value-link" style="color: #6f42c1; font-weight:bold;">≡ ${String(lblName).replace("≡ ", "")}</span> <br/><code style="font-size:0.8em; color:#555;">[IRI: ${eqNode ? eqNode.meta.iri : eqId}]</code>`;
+                
+                if (eqNode && eqNode.meta.subclasses && eqNode.meta.subclasses.length > 0) {
+                    cardElement += `<div style="margin-left: 15px; margin-top: 6px; padding-left: 8px; border-left: 2px solid #6f42c1;">
+                        <div style="font-size:0.85em; color:#6f42c1; font-weight:bold; margin-bottom:2px;">Inherited Subclasses:</div>`;
+                    eqNode.meta.subclasses.forEach(subId => {
+                        let subNode = window.globalNodeRegistry[subId];
+                        cardElement += `<div><span class="value-link" style="font-size:0.9em;" onclick="window.selectTaxonomyNode('${subId}')">└─ ● ${subNode ? subNode.text : cleanUrlFallback(subId)}</span></div>`;
+                    });
+                    cardElement += `</div>`;
+                }
+                cardElement += `</div>`;
+                itemsList.push(cardElement);
+            });
+            if (itemsList.length > 0) equivalentsBlockHtml = itemsList.join('');
+        }
+
+        let objectPropertiesRows = "";
+        let dataPropertiesRows = "";
+
+        if (m.slots && m.slots.length) {
+            m.slots.forEach(s => {
+                let isDataProp = s.type === 'Data Property';
+                let pillColor = isDataProp ? '#1e7e34' : '#0056b3';
+                
+                let rowHtml = `<tr>
+                    <td>
+                        <div class="slot-icon" style="background-color:${pillColor};"></div>
+                        <strong>${s.name}</strong> <span class="prop-tag" style="color:${pillColor}; font-weight:bold;">[${s.type}]</span>
+                    </td>
+                    <td>${s.comment}</td>
+                    <td><code>${s.range}</code></td>
+                </tr>`;
+                
+                if (isDataProp) dataPropertiesRows += rowHtml;
+                else objectPropertiesRows += rowHtml;
+            });
+        }
+
+        if (!objectPropertiesRows) objectPropertiesRows = `<tr><td colspan="3" style="color:#888; font-style:italic; text-align:center;">No Object Properties mapped.</td></tr>`;
+        if (!dataPropertiesRows) dataPropertiesRows = `<tr><td colspan="3" style="color:#888; font-style:italic; text-align:center;">No Data Properties mapped.</td></tr>`;
+	let activeDefinition = 'No explicit description found.';
+        if (m) {
+            if (m.comment && m.comment !== 'None' && m.comment !== 'No explicit description found.') {
+                activeDefinition = m.comment;
+            } else if (m.rdfsComment && m.rdfsComment !== 'None') {
+                activeDefinition = m.rdfsComment;
+            }
+        }
+
+        $('#protege-inspector').html(`
+            <div class="class-title">Class: ${node.text}</div>
+            
+            <div class="yellow-card">
+                <div class="card-header" style="cursor:default; background:none; border:none;"><div class="card-label">Definition / Annotation:</div></div>
+                <div class="card-body">${activeDefinition}</div>
+            </div>
+
+            <div class="yellow-card" style="background-color: #f4f6f8; border-color: #d1d5db;">
+                <div class="card-header"><div class="card-label" style="color: #4b5563;">Lexical Tracking Labels</div><div class="toggle-icon">[ Hide − ]</div></div>
+                <div class="card-body" style="font-size: 0.9em; line-height: 1.6em;">
+                    <strong>rdfs:label:</strong> <code>${m.rdfsLabel}</code><br/>
+                    <strong>skos:prefLabel:</strong> <code>${m.prefLabel}</code><br/>
+                    <strong>Alternate / Synonyms:</strong> <span style="color:#555;">${m.altLabel}</span><br/>
+                    <strong>rdfs:comment:</strong> <span style="color:#666; font-style:italic;">${m.rdfsComment}</span>
+                </div>
+            </div>
+
+            <div class="yellow-card" style="background-color: #f3f0fa; border-color: #d6cbe3;">
+                <div class="card-header"><div class="card-label" style="color: #6f42c1;">Equivalent Classes (owl:equivalentClass)</div><div class="toggle-icon">[ Hide − ]</div></div>
+                <div class="card-body">${equivalentsBlockHtml}</div>
+            </div>
+
+            <div class="yellow-card">
+                <div class="card-header"><div class="card-label">Superclasses (Asserted Multiple Parents)</div><div class="toggle-icon">[ Hide − ]</div></div>
+                <div class="card-body">${buildSuperclassTreeHtml(node.id)}</div>
+            </div>
+
+            <div class="yellow-card">
+                <div class="card-header"><div class="card-label">Subclasses Hierarchy Tree (Deep & Multi-Parent)</div><div class="toggle-icon">[ Hide − ]</div></div>
+                <div class="card-body">${subsTree}</div>
+            </div>
+
+            <div class="slot-section-title"><span>Object Properties</span><span class="toggle-icon" style="font-size:0.75em; margin-left:auto; color:#104e8b;">[ Hide − ]</span></div>
+            <table class="slot-table">
+                <thead><tr><th>Property Name</th><th>Documentation</th><th>Range Target Value</th></tr></thead>
+                <tbody>${objectPropertiesRows}</tbody>
+            </table>
+
+            <div class="slot-section-title"><span>Data Properties</span><span class="toggle-icon" style="font-size:0.75em; margin-left:auto; color:#104e8b;">[ Hide − ]</span></div>
+            <table class="slot-table">
+                <thead><tr><th>Property Name</th><th>Documentation</th><th>Range Target Value</th></tr></thead>
+                <tbody>${dataPropertiesRows}</tbody>
+            </table>
+
+            <div class="feedback-box">
+                <h4>📝 Curator Review & Feedback Notes</h4>
+                <textarea class="feedback-input" id="feedback-text-${node.id}" placeholder="Leave alignment instructions, relationship comments, or tag structural corrections here..."></textarea>
+                <div class="feedback-controls">
+                    <select class="feedback-select" id="feedback-tag-${node.id}">
+                        <option value="General Comment">💬 General Note</option>
+                        <option value="Correction Required">❌ Correction Required</option>
+                        <option value="Missing Child/Property">➕ Missing Child/Property</option>
+                        <option value="Approved">✅ Approved Node</option>
+                    </select>
+                    <button class="submit-feedback-btn" data-class-id="${node.id}" data-class-name="${node.text}">Save Note</button>
+                </div>
+                <div id="saved-comments-${node.id}" style="margin-top: 10px;"></div>
+            </div>
+
+            <div style="margin-top:25px; font-size:0.8em; color:#666;">System IRI Location: <code>${m.iri}</code></div>
+        `);
+
+        renderActiveCommentsList(node.id);
+    });
+
+    window.selectTaxonomyNode = function(nodeId) {
+        if (!nodeId) return;
+        const tree = $('#protege-tree').jstree(true);
+        if (tree) {
+            let allNodes = tree.get_json('#', { flat: true });
+            let match = allNodes.find(n => (n.data && n.data.originalId === nodeId) || n.id === nodeId);
+            if (match) {
+                tree.deselect_all();
+                tree.select_node(match.id);
+                tree._open_to(match.id);
+                document.getElementById(match.id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    };
+
+    function buildSubclassTreeHtml(nodeId, currentBranchPath = []) {
+        if (currentBranchPath.includes(nodeId)) return '';
+        const node = window.globalNodeRegistry[nodeId];
+        if (!node) return '';
+
+        let nextPath = [...currentBranchPath, nodeId];
+        let finalSubclassIds = getAllSubclasses(nodeId).filter(subId => {
+            let subNode = window.globalNodeRegistry[subId];
+            return subNode && !isPrimitiveType(subId, subNode.text, '');
+        });
+
+        if (finalSubclassIds.length === 0) return '';
+
+        let html = `<ul style="list-style-type: none; margin: 4px 0 4px 8px; padding-left: 12px; border-left: 1px dashed #b5c7de;">`;
+        finalSubclassIds.forEach(subId => {
+            const subNode = window.globalNodeRegistry[subId];
+            let isDirect = node.meta.subclasses.includes(subId);
+            let visualPrefix = isDirect ? '● ' : '<span style="color:#6f42c1; font-weight:bold;">≡ ● </span>';
+            
+            html += `<li style="margin: 4px 0; line-height: 1.4em;">
+                <span class="value-link" style="cursor: pointer; ${isDirect ? '' : 'color: #6f42c1; font-style: italic;'}" onclick="window.selectTaxonomyNode('${subId}')">${visualPrefix}${subNode.text}</span>
+                ${buildSubclassTreeHtml(subId, nextPath)}
+            </li>`;
+        });
+        html += `</ul>`;
+        return html;
+    }
+
+    function buildSuperclassTreeHtml(nodeId) {
+        let allSupers = getAllSuperclasses(nodeId).filter(supId => {
+            let supNode = window.globalNodeRegistry[supId];
+            return supNode && !isPrimitiveType(supId, supNode.text, '');
+        });
+
+        if (allSupers.length === 0) return '<div style="color:#666; font-style:italic;">None (This is a root base level entity)</div>';
+
+        let html = `<ul style="list-style-type: none; margin: 0; padding: 0;">`;
+        allSupers.forEach(supId => {
+            let supNode = window.globalNodeRegistry[supId];
+            let isDirect = window.globalNodeRegistry[nodeId].meta.superclasses.includes(supId);
+            let prefix = isDirect ? '↑ ' : '<span style="color:#6f42c1; font-weight:bold;">≡ ↑ </span>';
+            
+            html += `<li style="margin: 4px 0; line-height: 1.4em;">
+                <span class="value-link" style="cursor: pointer; color: #a94442; ${isDirect ? '' : 'font-style:italic;'}" onclick="window.selectTaxonomyNode('${supId}')">${prefix}${supNode.text}</span>
+            </li>`;
+        });
+        html += `</ul>`;
+        return html;
+    }
+
+    // 9. FINAL STEP: SAFE RUN POPULATOR
+    if (typeof window.vowlData !== 'undefined') {
+        setTimeout(function() {
+            window.processOntologyData(window.vowlData);
+        }, 150);
+    } else {
+        $('#protege-tree').html('<span style="color:red; font-size:0.9em; padding:10px; display:block;">Error: "ontology-data.js" not detected or missing window.vowlData object.</span>');
+    }
+});
+
+// 10. RE-ENGINEERED STANDALONE REGISTRY SEARCH WORKER
+// ULTRA-FAST CSS-BASED TREE FILTER ENGINE
+// RE-ENGINEERED INSTANT AUTOMATIC FILTER ENGINE
+// RE-ENGINEERED NATIVE TREE FILTER ENGINE
+function executeFastSearch(query) {
+    const tree = $('#protege-tree').jstree(true);
+    if (!tree) return;
+
+    let queryLower = query.toLowerCase().trim();
+    if (!queryLower) {
+        tree.clear_search();
+        return;
+    }
+
+    // Run jsTree's optimized native search filter
+    tree.search(queryLower);
+}
