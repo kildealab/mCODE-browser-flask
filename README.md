@@ -28,16 +28,21 @@
    - Copy your original `ontology-data.js` into `static/js/`
 
 4. **Run**
-   ```bash
-  # To run a Flask development server
-   uv run flask run
-   ```
-   
-   ```bash
-   # To access externally
-   uv run flask run --host=0.0.0.0 -p 8085
-   ```
-5. Open http://localhost:5000
+     ```bash
+      # Go to the source folderT
+      cd src
+      ```
+   - Flask development server
+      ```bash
+      # To run a Flask development server accessible externally - replace the port as needed -
+      uv run flask run --host=0.0.0.0 -p 8085
+      ```
+      Open http://localhost:5000
+   - gunicorn server
+      ```bash
+      # To run a gunicorn server accessible externally - replace the port as needed -
+      uv run gunicorn -w 3 "wsgi:app" -b 0.0.0.0:8085
+      ```
 
 ## Next steps you may want later
 
