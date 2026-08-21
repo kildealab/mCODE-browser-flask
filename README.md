@@ -8,11 +8,11 @@
 
 ## Quick start
 
-1. **Install dependencies**
+_1. **Install dependencies**
    ```bash
    cd mCODE-browser
    uv sync
-   ```
+   ```_
 
 2. **Configure environment**
    ```bash
@@ -81,3 +81,10 @@ Body:
 
 ### `GET /api/health`
 Simple liveness check.
+Returns the status 200 / "ok" if the api is running:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-08-20T22:33:42.009839"
+}
+```

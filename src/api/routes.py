@@ -4,6 +4,8 @@ from pathlib import Path
 from postgrest.exceptions import APIError
 from supabase import create_client, Client
 
+import json
+
 
 api = Blueprint(
     'api', __name__,
@@ -53,7 +55,7 @@ def feedback():
                         "text": f.get("comment")
                     }]
                 }
-        return feedbackDatabase
+        return jsonify(feedbackDatabase), 200
     # POST /api/feedback → add a new note
     elif request.method == 'POST':
         data = request.json
