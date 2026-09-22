@@ -176,6 +176,15 @@ body {
     margin-bottom: 12px;
 }
 
+.ontology-download {
+    width: 100%;
+    max-width: 1300px;   /* Matches the 1300px width of your other sections */
+    margin: 0 auto;       /* Centers the block on the page */
+    padding: 0 20px;      /* Aligns the side padding with your other content */
+    padding-top: 2rem;
+    box-sizing: border-box;
+}
+
 /* Gray introductory box */
 .ontology-intro {
     display: inline-block;
