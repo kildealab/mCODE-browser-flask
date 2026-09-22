@@ -160,6 +160,149 @@ body {
     display: flex; /* Display active workspace layout */
 }
 
+
+.ontology-download {
+    width: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #333;
+}
+
+/* Title */
+.ontology-title {
+    font-size: 36px;
+    font-weight: 300;
+    color: #003b7a;
+    margin-bottom: 12px;
+}
+
+/* Gray introductory box */
+.ontology-intro {
+    display: inline-block;
+    background-color: #eeeeee;
+    padding: 4px 6px;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* Section heading */
+.ontology-section-title {
+    font-size: 34px;
+    font-weight: 300;
+    color: #003b7a;
+    margin-bottom: 20px;
+}
+
+/* Recommended download */
+.ontology-recommended {
+    font-size: 16px;
+    margin-bottom: 35px;
+}
+
+.ontology-recommended a {
+    color: #4169c9;
+    text-decoration: none;
+}
+
+.ontology-recommended a:hover {
+    text-decoration: underline;
+}
+
+.download-icon {
+    margin-right: 5px;
+}
+
+/* Horizontal line */
+.ontology-line {
+    width: 100%;
+    border-top: 1px solid #b8c9df;
+    margin-bottom: 28px;
+}
+
+
+/* =========================
+   TABLE
+   ========================= */
+
+.ontology-row {
+    display: grid;
+
+    /*
+       File | Description | OBO | JSON | OWL
+    */
+    grid-template-columns:
+        75px
+        minmax(400px, 1fr)
+        105px
+        105px
+        105px;
+
+    border-bottom: 1px solid #d5d5d5;
+}
+
+
+/* Header */
+.ontology-header {
+    font-weight: bold;
+    border-bottom: 1px solid #cccccc;
+}
+
+
+/* All cells */
+.file-column,
+.description-column,
+.download-column {
+    padding: 10px 8px;
+}
+
+
+/* File name */
+.file-column {
+    font-weight: bold;
+}
+
+
+/* Description */
+.description-column {
+    line-height: 1.55;
+    font-size: 16px;
+    font-weight: normal;
+}
+
+
+/* Download columns */
+.download-column {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+
+/* Links */
+.download-column a {
+    color: #4169c9;
+    text-decoration: none;
+}
+
+.download-column a:hover {
+    text-decoration: underline;
+}
+
+
+/* File name should stay left aligned */
+.file-name {
+    text-align: left;
+}
+
+
+/* External ontology links */
+.description-column a {
+    color: #4169c9;
+    text-decoration: none;
+}
+
+.description-column a:hover {
+    text-decoration: underline;
+}
 /* Maintain inner components relative to the remaining space */
 #protege-sidebar { 
     width: 380px; 
@@ -171,6 +314,9 @@ body {
     box-sizing: border-box; 
     height: 100%;
 }
+
+
+
 #protege-inspector { 
     flex: 1; 
     padding: 20px 30px; 
@@ -179,6 +325,8 @@ body {
     box-sizing: border-box; 
     height: 100%;
 }
+
+
 
 /* Fullscreen Visualization View Padding */
 .full-viz-container {
