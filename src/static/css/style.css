@@ -221,6 +221,30 @@ body {
     margin-right: 5px;
 }
 
+.additional-downloads-container {
+    margin-top: 50px;
+    border-top: 1px solid #e5e7eb; /* Adds a clean dividing line above the section */
+    padding-top: 30px;
+}
+
+.additional-file-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.file-desc {
+    color: #4b5563; /* Soft gray for the description text */
+    font-size: 15px;
+}
 /* Horizontal line */
 .ontology-line {
     width: 100%;
