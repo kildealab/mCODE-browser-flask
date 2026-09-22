@@ -9,6 +9,8 @@
             <button class="global-tab-btn active" data-target="page-home">Home</button>
             <button class="global-tab-btn" data-target="page-browser">Browser View</button>
             <button class="global-tab-btn" data-target="page-visualization">Visualization View</button>
+            <button class="global-tab-btn" data-target="page-downloads">Visualization View</button>
+
         </div>
     </div>
 
@@ -76,4 +78,95 @@
             </div>
         </div>
     </div>
+
+    <div id="page-downloads" class="page-content">
+        <!-- Everything is wrapped in one single column container -->
+    <div class="ontology-download">
+
+            <h1 class="page-title">Download the ontology</h1>
+            <p><span> By Odette Rios-Ibacache, Gaetan Butault, Amal Zouaq & John Kildea</span></p>
+           <h3 style="margin-top:0; color:#104e8b;">Files are available in .OWL and .TTL formats. </h3>
+           <h3 style="margin-top:0; color:#104e8b;">Three versions of the ontology are available as described below.</h3>
+            <!-- Recommended download -->
+    <div class="ontology-recommended">
+        <span class="download-icon">⬇</span>
+
+        <a href="files/go-basic.obo" download>
+            <strong>Download mCODE-orchid.owl</strong>
+        </a>
+
+        <span>
+            - Recommended last version
+        </span>
+    </div>
+
+    <!-- Horizontal line -->
+    <div class="ontology-line"></div>
+
+
+    <!-- Table header -->
+    <div class="ontology-row ontology-header">
+
+        <div class="file-column">
+            File<br>Name
+        </div>
+
+        <div class="description-column">
+            Description
+        </div>
+
+        <div class="download-column">
+            ⬇<br>
+            Download<br>.owl file
+        </div>
+
+        <div class="download-column">
+            ⬇<br>
+            Download<br>.ttl file
+        </div>
+
+        <div class="download-column">
+            ⬇<br>
+            Download<br>.json file
+        </div>
+
+    </div>
+
+
+    <!-- GO-BASIC row -->
+    <div class="ontology-row">
+
+        <div class="file-column file-name">
+            mCODE-orchid<br> v1.0.0
+        </div>
+
+        <div class="description-column">
+            First created version, guided by the mCODE 4.0.0 (STU4) Terminology Standards Value Sets. Our model reuses established ontologies (SNOMED CT, LOINC, NCIt, RxNorm, UCUM, GO, O3) and maps image features to specific RadLex and O3 identifiers. 
+        </div>
+
+        <div class="download-column">
+            <a href="files/mCODE-orchid.owl" download>
+                mCODE-orchid.owl
+            </a>
+        </div>
+
+        <div class="download-column">
+            <a href="files/mCODE-orchid.ttl" download>
+                mCODE-orchid.ttl
+            </a>
+        </div>
+
+        <div class="download-column">
+            <a href="files/mCODE-orchid.json" download>
+                mCODE-orchid.json
+            </a>
+        </div>
+
+    </div>
+
+
+</div>
+           </div> <!-- This closes <div class="text-content"> -->
+
+
 {% endblock content %}
