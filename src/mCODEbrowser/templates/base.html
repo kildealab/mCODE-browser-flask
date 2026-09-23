@@ -4,7 +4,9 @@
     <body>
         {% block content %}
         {% endblock %}
-
+        <!-- Add your footer here -->
+        {% include 'footer.html' %}
+        
         <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     </body>
 </html>
