@@ -273,6 +273,76 @@ body {
     border-bottom: 1px solid #d5d5d5;
 }
 
+.site-footer {
+    background-color: #1B2775; /* Deep dark navy blue */
+    color: #ffffff;
+    padding: 10px 0;
+    margin-top: 1px;
+    border-top: 0px solid #002B49;
+    font-size: 13.5px;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 25px;
+}
+
+.footer-links a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+.footer-logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.footer-logo {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.footer-logo-text {
+    font-size: 15px;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+}
+
+.footer-info {
+    text-align: right;
+    color: #94a3b8; /* Soft muted gray for readability */
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 480px;
+}
+
+.footer-info p {
+    margin: 0 0 4px 0;
+}
+
+
+
+
 
 /* Header */
 .ontology-header {
@@ -337,6 +407,7 @@ body {
 .description-column a:hover {
     text-decoration: underline;
 }
+
 /* Maintain inner components relative to the remaining space */
 #protege-sidebar { 
     width: 380px; 
